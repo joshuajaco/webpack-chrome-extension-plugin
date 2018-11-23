@@ -1,0 +1,17 @@
+{
+  "name": "chrome-extension-webpack-plugin-test",
+  "version": "0.0.2",
+  "main": "index.js",
+  "license": "MIT",
+  "scripts": {
+    "format": "prettier --write **/*.{js,json}"
+  },
+  "files": [
+    "index.js",
+    "hotReload.js"
+  ],
+  "dependencies": {
+    "prettier": "^1.15.2",
+    "websocket": "^1.0.28"
+  }
+}

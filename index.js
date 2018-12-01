@@ -1,4 +1,4 @@
-const filesystem = require('fs');
+const fs = require('fs');
 const { resolve } = require('path');
 const { createServer } = require('http');
 const Socket = require('websocket').server;
@@ -18,7 +18,7 @@ class ChromeExtensionPlugin {
     this.options.port = this.options.port || 9003;
 
     if (!this.options.manifest) {
-      if (filesystem.existsSync(resolve('manifest.json'))) {
+      if (fs.existsSync(resolve('manifest.json'))) {
         this.options.manifest = 'manifest.json';
       } else {
         throw Error('No manifest');
@@ -35,31 +35,39 @@ class ChromeExtensionPlugin {
 
         const manifest =
           typeof originalManifest === 'string'
-            ? JSON.parse(filesystem.readFileSync(resolve(originalManifest)))
+            ? JSON.parse(fs.readFileSync(resolve(originalManifest)))
             : originalManifest;
 
         if (dev) {
+          compilation.assets['backgroundWorker.js'] = toAsset(
+            fs
+              .readFileSync(resolve(__dirname, 'client.template.js'))
+              .toString()
+              .replace(/{{host}}/, host)
+              .replace(/{{port}}/, port),
+          );
+
           if (manifest.background) {
             manifest.background.scripts = manifest.background.scripts || [];
-            manifest.background.scripts.push('hotReload.js');
+            manifest.background.scripts.push('backgroundWorker.js');
           } else {
             manifest.background = {
-              scripts: ['hotReload.js'],
+              scripts: ['backgroundWorker.js'],
               persistent: false,
             };
           }
         }
 
-        compilation.assets['manifest.json'] = toAsset(JSON.stringify(manifest));
+        compilation.assets['manifest.json'] = toAsset(
+          JSON.stringify(manifest, null, dev ? 2 : null),
+        );
 
-        if (dev) {
-          compilation.assets['hotReload.js'] = toAsset(
-            filesystem
-              .readFileSync(resolve(__dirname, 'hotReload.js'))
-              .toString()
-              .replace(/{{host}}/, host)
-              .replace(/{{port}}/, port),
-          );
+        try {
+          fs.readdirSync(resolve('/public')).map(thing => {
+            console.log(thing.toString());
+          });
+        } catch {
+          console.log('no public files');
         }
       });
     });

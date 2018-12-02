@@ -23,6 +23,9 @@ class ChromeExtensionPlugin {
 
     compiler.hooks.compilation.tap(name, compilation => {
       compilation.hooks.additionalAssets.tap(name, () => {
+        // html-webpack-plugin "fake" compilation fix
+        if (compilation.entrypoints.get(undefined)) return;
+
         if (compiler.options.mode === 'development') {
           compilation.assets['backgroundWorker.js'] = toAsset(
             createBackgroundWorker(this.options),
@@ -42,6 +45,9 @@ class ChromeExtensionPlugin {
     });
 
     compiler.hooks.afterCompile.tap(name, compilation => {
+      // html-webpack-plugin "fake" compilation fix
+      if (compilation.entrypoints.get(undefined)) return;
+
       this.fileDependencies.forEach(path => {
         compilation.fileDependencies.add(path);
       });

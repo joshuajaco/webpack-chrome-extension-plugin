@@ -1,6 +1,6 @@
 {
   "name": "chrome-extension-webpack-plugin-test",
-  "version": "0.0.6",
+  "version": "0.0.7",
   "main": "index.js",
   "license": "MIT",
   "scripts": {
@@ -8,7 +8,8 @@
   },
   "files": [
     "index.js",
-    "client.template.js"
+    "client.template.js",
+    "lib/*"
   ],
   "dependencies": {
     "deepmerge": "^2.2.1",

@@ -1,4 +1,7 @@
-const connection = new WebSocket('ws://{{host}}:{{port}}');
+const host = '{{host}}';
+const port = '{{port}}';
+
+const connection = new WebSocket(`ws://${host}:${port}`);
 
 connection.onmessage = message => {
   if (message.data === 'RELOAD_EXTENSION') {

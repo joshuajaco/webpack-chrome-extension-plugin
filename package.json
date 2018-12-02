@@ -1,6 +1,6 @@
 {
   "name": "chrome-extension-webpack-plugin-test",
-  "version": "0.0.4",
+  "version": "0.0.6",
   "main": "index.js",
   "license": "MIT",
   "scripts": {
@@ -8,9 +8,10 @@
   },
   "files": [
     "index.js",
-    "hotReload.js"
+    "client.template.js"
   ],
   "dependencies": {
+    "deepmerge": "^2.2.1",
     "prettier": "^1.15.2",
     "websocket": "^1.0.28"
   }

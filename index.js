@@ -1,7 +1,7 @@
-const fs = require('fs');
-const { resolve } = require('path');
 const { createServer } = require('http');
 const Socket = require('websocket').server;
+const createBackgroundWorker = require('./lib/createBackgroundWorker');
+const createManifest = require('./lib/createManifest');
 
 const name = 'MyPlugin';
 
@@ -10,70 +10,41 @@ const toAsset = raw => ({
   size: () => Buffer.byteLength(raw),
 });
 
+const defaultOptions = { host: '127.0.0.1', port: 9003 };
+
 class ChromeExtensionPlugin {
   constructor(options) {
-    this.options = options || {};
-
-    this.options.host = this.options.host || '127.0.0.1';
-    this.options.port = this.options.port || 9003;
-
-    if (!this.options.manifest) {
-      if (fs.existsSync(resolve('manifest.json'))) {
-        this.options.manifest = 'manifest.json';
-      } else {
-        throw Error('No manifest');
-      }
-    }
+    this.options = { ...defaultOptions, ...options };
+    this.fileDependencies = [];
   }
 
   apply(compiler) {
-    const { host, port, manifest: originalManifest } = this.options;
+    const { host, port } = this.options;
 
     compiler.hooks.compilation.tap(name, compilation => {
       compilation.hooks.additionalAssets.tap(name, () => {
-        const dev = compiler.options.mode === 'development';
-
-        const manifest =
-          typeof originalManifest === 'string'
-            ? JSON.parse(fs.readFileSync(resolve(originalManifest)))
-            : originalManifest;
-
-        if (dev) {
+        if (compiler.options.mode === 'development') {
           compilation.assets['backgroundWorker.js'] = toAsset(
-            fs
-              .readFileSync(resolve(__dirname, 'client.template.js'))
-              .toString()
-              .replace(/{{host}}/, host)
-              .replace(/{{port}}/, port),
+            createBackgroundWorker(this.options),
           );
-
-          if (manifest.background) {
-            manifest.background.scripts = manifest.background.scripts || [];
-            manifest.background.scripts.push('backgroundWorker.js');
-          } else {
-            manifest.background = {
-              scripts: ['backgroundWorker.js'],
-              persistent: false,
-            };
-          }
         }
 
-        compilation.assets['manifest.json'] = toAsset(
-          JSON.stringify(manifest, null, dev ? 2 : null),
+        const [manifest, path] = createManifest(
+          compilation,
+          compiler.options.mode,
+          this.options,
         );
 
-        try {
-          fs.readdirSync(resolve('/public')).map(thing => {
-            console.log(thing.toString());
-          });
-        } catch {
-          console.log('no public files');
-        }
+        if (path) this.fileDependencies.push(path);
+
+        compilation.assets['manifest.json'] = toAsset(JSON.stringify(manifest));
       });
     });
 
     compiler.hooks.afterCompile.tap(name, compilation => {
-      compilation.fileDependencies.add(resolve(originalManifest));
+      this.fileDependencies.forEach(path => {
+        compilation.fileDependencies.add(path);
+      });
 
       if (this.socket) this.socket.broadcast('RELOAD_EXTENSION');
     });
